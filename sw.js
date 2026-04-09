@@ -1,5 +1,5 @@
 const CACHE = "dgt-v2";
-const ASSETS = ["/", "/index.html", "/manifest.json", "/sw.js"];
+const ASSETS = ["/daily-goal-tracker/", "/daily-goal-tracker/index.html", "/daily-goal-tracker/manifest.json", "/daily-goal-tracker/sw.js", "/daily-goal-tracker/icon.svg"];
 
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
