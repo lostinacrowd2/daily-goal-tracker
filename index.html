@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="theme-color" content="#0f172a"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<title>Daily Goal Tracker</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#f8fafc;--card:#fff;--border:#e2e8f0;--text:#0f172a;
+    --muted:#64748b;--accent:#0f172a;--accent-fg:#fff;
+    --green:#16a34a;--radius:14px;
+  }
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100dvh;padding-bottom:40px}
+  header{background:var(--accent);color:#fff;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
+  header h1{font-size:1.1rem;font-weight:700}
+  header span{font-size:.75rem;opacity:.7}
+  .wrap{max-width:640px;margin:0 auto;padding:16px}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:14px}
+  .card-title{font-size:.85rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px}
+
+  /* Date strip */
+  .date-strip{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch}
+  .date-strip::-webkit-scrollbar{display:none}
+  .day-btn{min-width:110px;border-radius:12px;border:1.5px solid var(--border);padding:10px 12px;text-align:left;background:#fff;cursor:pointer;transition:all .15s;flex-shrink:0}
+  .day-btn.active{background:var(--accent);border-color:var(--accent);color:#fff}
+  .day-btn .label{font-size:.72rem;opacity:.75}
+  .day-btn .pts{font-size:.82rem;font-weight:700;margin-top:3px}
+
+  /* Progress bar */
+  .prog-wrap{background:#e2e8f0;border-radius:99px;height:8px;overflow:hidden;margin:10px 0}
+  .prog-fill{height:100%;background:var(--green);border-radius:99px;transition:width .3s}
+
+  /* Checklist */
+  .goal-item{display:flex;align-items:center;gap:12px;border:1.5px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:border-color .15s}
+  .goal-item.done{border-color:var(--green);background:#f0fdf4}
+  .goal-item input[type=checkbox]{width:18px;height:18px;accent-color:var(--green);cursor:pointer;flex-shrink:0}
+  .goal-item label{font-size:.9rem;font-weight:500;cursor:pointer;flex:1}
+
+  /* Notes */
+  textarea{width:100%;border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;font-size:.88rem;font-family:inherit;resize:vertical;min-height:100px;color:var(--text);background:#fff}
+  textarea:focus{outline:none;border-color:var(--accent)}
+
+  /* Goal editor */
+  .goal-edit-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+  .goal-edit-row input[type=text]{flex:1;border:1.5px solid var(--border);border-radius:8px;padding:8px 10px;font-size:.88rem;font-family:inherit}
+  .goal-edit-row input:focus{outline:none;border-color:var(--accent)}
+
+  /* Summary table */
+  .summary{width:100%;border-collapse:collapse;font-size:.85rem}
+  .summary th{text-align:left;padding:6px 8px;color:var(--muted);font-weight:600;border-bottom:1px solid var(--border)}
+  .summary td{padding:7px 8px;border-bottom:1px solid #f1f5f9}
+  .summary tr:last-child td{border:none}
+  .badge{display:inline-block;padding:2px 8px;border-radius:99px;font-size:.75rem;font-weight:700;background:#dcfce7;color:var(--green)}
+
+  /* Tabs */
+  .tabs{display:flex;gap:6px;margin-bottom:16px;border-bottom:2px solid var(--border);padding-bottom:0}
+  .tab{padding:8px 14px;border:none;background:none;font-size:.88rem;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2.5px solid transparent;margin-bottom:-2px;transition:all .15s}
+  .tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+
+  /* Header score */
+  .score-pill{background:rgba(255,255,255,.2);border-radius:99px;padding:3px 10px;font-size:.78rem;font-weight:700}
+
+  /* Edit goals btn */
+  .btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;border:1.5px solid var(--border);background:#fff;font-size:.82rem;font-weight:600;cursor:pointer;transition:all .15s}
+  .btn:hover{background:#f8fafc}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  .btn.primary:hover{opacity:.9}
+
+  .row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+  .muted{color:var(--muted);font-size:.82rem}
+
+  @media(prefers-color-scheme:dark){
+    :root{--bg:#0f172a;--card:#1e293b;--border:#334155;--text:#f1f5f9;--muted:#94a3b8;--accent:#f1f5f9;--accent-fg:#0f172a}
+    textarea,input[type=text]{background:#1e293b;color:#f1f5f9}
+    .day-btn{background:#1e293b}
+    .day-btn.active{background:#f1f5f9;color:#0f172a}
+    .goal-item{background:#1e293b}
+    .goal-item.done{background:#052e16;border-color:#16a34a}
+    .btn{background:#1e293b}
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>🎯 Daily Goal Tracker</h1>
+  <span id="header-score" class="score-pill"></span>
+</header>
+<div class="wrap">
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('track')">Track</button>
+    <button class="tab" onclick="switchTab('summary')">Summary</button>
+    <button class="tab" onclick="switchTab('settings')">Goals</button>
+  </div>
+
+  <!-- TRACK TAB -->
+  <div id="tab-track">
+    <div class="card">
+      <div class="row">
+        <div class="card-title" style="margin-bottom:0">Select Day</div>
+      </div>
+      <div class="date-strip" id="date-strip"></div>
+    </div>
+
+    <div class="card" id="checklist-card">
+      <div class="row">
+        <div>
+          <div style="font-weight:700" id="sel-date-label">No date selected</div>
+          <div class="muted">Check off completed goals</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:.9rem;font-weight:700" id="pts-label">0 / 5 pts</div>
+          <div class="muted" id="pct-label">0% complete</div>
+        </div>
+      </div>
+      <div class="prog-wrap"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+      <div id="goal-checks" style="margin-top:12px"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Notes</div>
+      <textarea id="notes-area" placeholder="Optional notes for this day…" oninput="saveNote()"></textarea>
+    </div>
+  </div>
+
+  <!-- SUMMARY TAB -->
+  <div id="tab-summary" style="display:none">
+    <div class="card">
+      <div class="row">
+        <div class="card-title" style="margin-bottom:0">Period Overview</div>
+        <div style="font-weight:700;font-size:.95rem" id="summary-total"></div>
+      </div>
+      <div class="prog-wrap" style="margin-bottom:14px"><div class="prog-fill" id="summary-prog"></div></div>
+      <table class="summary">
+        <thead><tr><th>Date</th><th>Points</th><th>%</th><th>Status</th></tr></thead>
+        <tbody id="summary-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- SETTINGS TAB -->
+  <div id="tab-settings" style="display:none">
+    <div class="card">
+      <div class="card-title">Goal Labels (5 fixed goals)</div>
+      <div id="goal-editor"></div>
+      <button class="btn primary" onclick="saveGoals()" style="margin-top:8px">Save Goal Names</button>
+    </div>
+    <div class="card">
+      <div class="card-title">Date Range</div>
+      <div style="display:grid;gap:10px;grid-template-columns:1fr 1fr;margin-bottom:12px">
+        <div>
+          <div class="muted" style="margin-bottom:4px">Start</div>
+          <input type="date" id="range-start" style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:.88rem;background:var(--card);color:var(--text)"/>
+        </div>
+        <div>
+          <div class="muted" style="margin-bottom:4px">End</div>
+          <input type="date" id="range-end" style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:.88rem;background:var(--card);color:var(--text)"/>
+        </div>
+      </div>
+      <button class="btn primary" onclick="saveRange()">Apply Range</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const NUM_GOALS = 5;
+const DEFAULT_START = "2026-04-13";
+const DEFAULT_END   = "2026-05-23";
+const DEFAULT_GOALS = ["Goal 1","Goal 2","Goal 3","Goal 4","Goal 5"];
+const STORAGE_KEY   = "dgt_v1";
+
+let state = load();
+let selectedDate = state.dates[0] || null;
+let activeTab = "track";
+
+function load() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return init();
+}
+
+function init() {
+  return {
+    goals: [...DEFAULT_GOALS],
+    start: DEFAULT_START,
+    end: DEFAULT_END,
+    dates: genDates(DEFAULT_START, DEFAULT_END),
+    checks: {},
+    notes: {}
+  };
+}
+
+function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+
+function genDates(s, e) {
+  const out = [], cur = new Date(s + "T00:00:00");
+  const end = new Date(e + "T00:00:00");
+  while (cur <= end) {
+    out.push(cur.toISOString().slice(0,10));
+    cur.setDate(cur.getDate()+1);
+  }
+  return out;
+}
+
+function fmtDate(d) {
+  const dt = new Date(d + "T00:00:00");
+  return dt.toLocaleDateString("en-US",{month:"short",day:"numeric",weekday:"short"});
+}
+
+function dayPts(d) {
+  return state.goals.filter((_,i) => state.checks[d]?.[i]).length;
+}
+
+// ── RENDER ────────────────────────────────────────────────
+function renderStrip() {
+  const strip = document.getElementById("date-strip");
+  strip.innerHTML = "";
+  state.dates.forEach(d => {
+    const pts = dayPts(d);
+    const btn = document.createElement("button");
+    btn.className = "day-btn" + (d === selectedDate ? " active" : "");
+    btn.innerHTML = `<div class="label">${fmtDate(d)}</div><div class="pts">${pts} / ${NUM_GOALS} pts</div>`;
+    btn.onclick = () => { selectedDate = d; renderAll(); };
+    strip.appendChild(btn);
+  });
+  // scroll active into view
+  const active = strip.querySelector(".active");
+  if (active) active.scrollIntoView({inline:"center",block:"nearest",behavior:"smooth"});
+}
+
+function renderChecklist() {
+  const container = document.getElementById("goal-checks");
+  container.innerHTML = "";
+  document.getElementById("sel-date-label").textContent = selectedDate ? fmtDate(selectedDate) : "No date selected";
+  const pts = selectedDate ? dayPts(selectedDate) : 0;
+  const pct = Math.round(pts / NUM_GOALS * 100);
+  document.getElementById("pts-label").textContent = `${pts} / ${NUM_GOALS} pts`;
+  document.getElementById("pct-label").textContent = `${pct}% complete`;
+  document.getElementById("prog-fill").style.width = pct + "%";
+  document.getElementById("header-score").textContent = selectedDate ? `${pts}/${NUM_GOALS}` : "";
+
+  if (!selectedDate) return;
+  state.goals.forEach((g, i) => {
+    const checked = !!(state.checks[selectedDate]?.[i]);
+    const div = document.createElement("div");
+    div.className = "goal-item" + (checked ? " done" : "");
+    const id = `chk-${i}`;
+    div.innerHTML = `<input type="checkbox" id="${id}" ${checked ? "checked" : ""}><label for="${id}">${g}</label>`;
+    div.querySelector("input").onchange = (e) => toggleGoal(i, e.target.checked);
+    container.appendChild(div);
+  });
+}
+
+function renderNotes() {
+  const ta = document.getElementById("notes-area");
+  ta.value = selectedDate ? (state.notes[selectedDate] || "") : "";
+}
+
+function renderSummary() {
+  const total = state.dates.reduce((s, d) => s + dayPts(d), 0);
+  const max = state.dates.length * NUM_GOALS;
+  const pct = max ? Math.round(total / max * 100) : 0;
+  document.getElementById("summary-total").textContent = `${total} / ${max} pts`;
+  document.getElementById("summary-prog").style.width = pct + "%";
+  const tbody = document.getElementById("summary-body");
+  tbody.innerHTML = "";
+  state.dates.forEach(d => {
+    const p = dayPts(d);
+    const pp = Math.round(p / NUM_GOALS * 100);
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${fmtDate(d)}</td><td>${p} / ${NUM_GOALS}</td><td>${pp}%</td><td>${p === NUM_GOALS ? '<span class="badge">✓ Perfect</span>' : p > 0 ? '<span style="color:var(--muted);font-size:.8rem">Partial</span>' : '<span style="color:#cbd5e1;font-size:.8rem">—</span>'}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function renderEditor() {
+  const ed = document.getElementById("goal-editor");
+  ed.innerHTML = "";
+  state.goals.forEach((g, i) => {
+    const row = document.createElement("div");
+    row.className = "goal-edit-row";
+    row.innerHTML = `<span class="muted" style="width:18px;text-align:center;font-size:.8rem">${i+1}</span><input type="text" value="${g}" id="goal-input-${i}" placeholder="Goal ${i+1}"/>`;
+    ed.appendChild(row);
+  });
+  document.getElementById("range-start").value = state.start;
+  document.getElementById("range-end").value = state.end;
+}
+
+function renderAll() {
+  renderStrip();
+  renderChecklist();
+  renderNotes();
+  if (activeTab === "summary") renderSummary();
+  if (activeTab === "settings") renderEditor();
+}
+
+// ── ACTIONS ───────────────────────────────────────────────
+function toggleGoal(i, checked) {
+  if (!selectedDate) return;
+  if (!state.checks[selectedDate]) state.checks[selectedDate] = {};
+  state.checks[selectedDate][i] = checked;
+  save();
+  renderAll();
+}
+
+function saveNote() {
+  if (!selectedDate) return;
+  state.notes[selectedDate] = document.getElementById("notes-area").value;
+  save();
+}
+
+function saveGoals() {
+  for (let i = 0; i < NUM_GOALS; i++) {
+    const v = document.getElementById(`goal-input-${i}`)?.value?.trim();
+    if (v) state.goals[i] = v;
+  }
+  save();
+  renderAll();
+  alert("Goal names saved!");
+}
+
+function saveRange() {
+  const s = document.getElementById("range-start").value;
+  const e = document.getElementById("range-end").value;
+  if (!s || !e || s > e) { alert("Pick a valid date range."); return; }
+  state.start = s;
+  state.end = e;
+  state.dates = genDates(s, e);
+  selectedDate = state.dates[0] || null;
+  save();
+  renderAll();
+  alert("Range applied!");
+}
+
+function switchTab(t) {
+  activeTab = t;
+  ["track","summary","settings"].forEach(id => {
+    document.getElementById(`tab-${id}`).style.display = id === t ? "" : "none";
+    document.querySelectorAll(".tab").forEach((el,i) => {
+      el.classList.toggle("active", ["track","summary","settings"][i] === t);
+    });
+  });
+  if (t === "summary") renderSummary();
+  if (t === "settings") renderEditor();
+}
+
+// ── PWA SERVICE WORKER ────────────────────────────────────
+if ("serviceWorker" in navigator) {
+  const SW_SRC = `
+const CACHE='dgt-v1';
+const ASSETS=['/'];
+self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS))));
+self.addEventListener('fetch',e=>e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request))));
+  `;
+  const blob = new Blob([SW_SRC], {type:"text/javascript"});
+  const swUrl = URL.createObjectURL(blob);
+  navigator.serviceWorker.register(swUrl).catch(() => {});
+}
+
+// ── BOOT ──────────────────────────────────────────────────
+renderAll();
+</script>
+</body>
+</html>
